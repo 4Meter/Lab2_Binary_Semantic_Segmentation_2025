@@ -129,6 +129,11 @@ def extract_archive(filepath):
         shutil.unpack_archive(filepath, extract_dir)
 
 def load_dataset(data_path, mode):
-    # implement the load dataset function here
-
-    assert False, "Not implemented yet!"
+    # IMP
+    # if dataset not exist, download the dataset
+    if not os.path.exists(os.path.join(data_path, "images")):
+        print("Dataset not found, downloading...")
+        OxfordPetDataset.download(data_path)
+    
+    dataset = SimpleOxfordPetDataset(root=data_path, mode=mode)
+    return dataset
