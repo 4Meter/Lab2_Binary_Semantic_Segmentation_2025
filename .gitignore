@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.ipynb_checkpoints
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter Notebook checkpoints (如果有)
+.ipynb_checkpoints/
+
+# VSCode settings
+.vscode/
+
+# OS 系統檔案
+.DS_Store
+Thumbs.db
+
+# PyTorch 模型或權重檔
+*.pth
+*.pt
+
+# 壓縮檔、資料集檔案
+*.tar
+*.tar.gz
+*.zip
+
+# 資料集資料夾（例如 oxford pets 資料）
+images/
+annotations/
+
+# Log / Output
+*.log
+logs/
+checkpoints/
+runs/
+
+# 自動產生的 requirements
+pip-log.txt
+
+# 其他暫存檔
+*.tmp
