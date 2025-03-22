@@ -1,6 +1,7 @@
 import argparse
 import os
 import json
+from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -16,15 +17,22 @@ def train(args):
     val_dataset = load_dataset(args.data_path, mode='valid')
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-    # 模型、損失函數與優化器設定（此處僅放範例 placeholder）
-    model = UNet(n_channels=3, n_classes=1) # TODO: 換成 UNet 或其他模型
-    criterion = torch.nn.BCELoss()
+    # 模型、損失函數與優化器設定
+    model = UNet(c_in=3, c_out=2) # TODO: 換成 UNet 或其他模型
+    criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    #device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
+    # device select
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available():
+        device = torch.device('mps')
+    else:
+        device = torch.device('cpu')
+    print(f'The used device is {device}')
+    model.to(device)
+    
     best_dice = 0.0
     best_epoch = 0
     patience = 3
@@ -41,9 +49,10 @@ def train(args):
     for epoch in range(args.epochs):
         model.train()
         epoch_loss = 0.0
-        for batch in train_loader:
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{args.epochs}")
+        for batch in pbar:
             images = batch["image"].float().to(device)
-            masks = batch["mask"].float().to(device)
+            masks = batch["mask"].squeeze(1).long().to(device)
 
             preds = model(images)
             loss = criterion(preds, masks)
@@ -53,6 +62,7 @@ def train(args):
             optimizer.step()
 
             epoch_loss += loss.item()
+            pbar.set_postfix({"loss": loss.item()})
 
         avg_loss = epoch_loss / len(train_loader)
         print(f"Epoch {epoch+1}/{args.epochs} - Training Loss: {avg_loss:.4f}")
