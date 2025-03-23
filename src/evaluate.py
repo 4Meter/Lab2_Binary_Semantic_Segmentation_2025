@@ -9,7 +9,9 @@ def evaluate(net, data, device, batch_size=4):
     loader = DataLoader(data, batch_size=batch_size, shuffle=False)
 
     total_dice = 0.0
+    total_loss = 0.0
     num_batches = 0
+    criterion = torch.nn.CrossEntropyLoss()
 
     with torch.no_grad():
         for batch in tqdm(loader, desc="Validating..."):
@@ -17,6 +19,8 @@ def evaluate(net, data, device, batch_size=4):
             masks = batch["mask"].squeeze(1).long().to(device)  # class index labels: 0 or 1
 
             outputs = net(images)  # [B, 2, H, W]
+            loss = criterion(outputs, masks)
+            total_loss += loss.item()
             preds = torch.argmax(outputs, dim=1)  # [B, H, W], predicted class index
 
             # Convert preds and masks to binary masks for dice score
@@ -28,6 +32,8 @@ def evaluate(net, data, device, batch_size=4):
             num_batches += 1
 
     avg_dice = total_dice / num_batches
+    avg_loss = total_loss / num_batches
     print("Evaluation Completed.")
     print(f"Validation Dice Score: {avg_dice:.4f}")
-    return avg_dice
+    print(f"Validation Loss: {avg_loss:.4f}")
+    return avg_dice, avg_loss

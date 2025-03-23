@@ -45,7 +45,7 @@ def train(args):
     
     best_dice = 0.0
     best_epoch = 0
-    patience = 4
+    patience = 5
     patience_counter = 0
 
     os.makedirs("saved_models", exist_ok=True)
@@ -54,6 +54,7 @@ def train(args):
     history = {
         "train_loss": [],
         "val_dice": [],
+        "val_loss": [],
         "lr": []
     }
 
@@ -81,12 +82,13 @@ def train(args):
         print(f"Epoch {epoch+1} - Training Loss: {avg_loss:.4f}, LR: {current_lr:.6f}")
 
         # Validation
-        val_dice = evaluate(model, val_dataset, device, args.batch_size)
+        val_dice, val_loss = evaluate(model, val_dataset, device, args.batch_size)
         scheduler.step(val_dice)
         
         # Epoch result saving
         history["train_loss"].append(avg_loss)
         history["val_dice"].append(val_dice)
+        history["val_loss"].append(val_loss)
         history["Last Epoch"] = epoch+1
         
         # Model saving + Early stopping
