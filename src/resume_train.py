@@ -1,14 +1,17 @@
 import argparse
+import os
+import json
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+
 import torch
 from torch.utils.data import DataLoader
+import torch.nn as nn
+
 from models.unet import UNet
 from evaluate import evaluate
 from utils import SegmentationTransform, dice_score
 from oxford_pet import SimpleOxfordPetDataset
-import torch.nn as nn
-import os
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 
 def resume_training(args):
