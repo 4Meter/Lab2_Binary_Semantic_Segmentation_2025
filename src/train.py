@@ -24,6 +24,7 @@ def train(args):
     model = UNet(c_in=3, c_out=2) # TODO: 換成 UNet 或其他模型
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=2)
 
     # device select
     if torch.cuda.is_available():
@@ -71,6 +72,7 @@ def train(args):
 
         # Validation
         val_dice = evaluate(model, val_dataset, device, args.batch_size)
+        scheduler.step(val_dice)
         
         # Epoch result saving
         history["train_loss"].append(avg_loss)
