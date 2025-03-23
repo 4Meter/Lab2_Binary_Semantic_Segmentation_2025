@@ -9,13 +9,15 @@ from torch.utils.data import DataLoader
 from oxford_pet import load_dataset
 from models.unet import UNet
 from evaluate import evaluate
+from utils import SegmentationTransform
 
 def train(args):
     # IMP
     # implement the training function here
-    train_dataset = load_dataset(args.data_path, mode='train')
+    transform = SegmentationTransform()
+    train_dataset = load_dataset(args.data_path, mode='train',transform=transform)
     val_dataset = load_dataset(args.data_path, mode='valid')
-
+    
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
     # 模型、損失函數與優化器設定
@@ -68,7 +70,7 @@ def train(args):
         print(f"Epoch {epoch+1}/{args.epochs} - Training Loss: {avg_loss:.4f}")
 
         # Validation
-        val_dice = evaluate(model, val_dataset, device)
+        val_dice = evaluate(model, val_dataset, device, args.batch_size)
         
         # Epoch result saving
         history["train_loss"].append(avg_loss)

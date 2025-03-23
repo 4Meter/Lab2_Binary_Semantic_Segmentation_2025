@@ -29,5 +29,21 @@ def dice_score(pred_mask, gt_mask, epsilon=1e-6):
     dice = (2. * intersection + epsilon) / (union + epsilon)
     return dice.mean().item()
 
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
+# transform wrapper class
+class SegmentationTransform:
+    def __init__(self):
+        self.transform = A.Compose([
+            A.HorizontalFlip(p=0.5),
+            A.RandomRotate90(p=0.5),
+            A.GridDistortion(p=0.5),
+            A.RandomBrightnessContrast(p=0.2),
+        ])
 
+    def __call__(self, image, mask, trimap=None):
+        augmented = self.transform(image=image, mask=mask) # Only transform
+        image = augmented['image']          # [C, H, W]
+        mask = augmented['mask']            # [H, W]
+        return {"image": image, "mask": mask, "trimap": trimap}

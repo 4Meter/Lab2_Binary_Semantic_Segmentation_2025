@@ -36,7 +36,7 @@ class OxfordPetDataset(torch.utils.data.Dataset):
         mask = self._preprocess_mask(trimap)
 
         sample = dict(image=image, mask=mask, trimap=trimap)
-        if self.transform is not None:
+        if self.transform is not None: 
             sample = self.transform(**sample)
 
         return sample
@@ -84,7 +84,7 @@ class SimpleOxfordPetDataset(OxfordPetDataset):
     def __getitem__(self, *args, **kwargs):
 
         sample = super().__getitem__(*args, **kwargs)
-
+        
         # resize images
         image = np.array(Image.fromarray(sample["image"]).resize((256, 256), Image.BILINEAR))
         mask = np.array(Image.fromarray(sample["mask"]).resize((256, 256), Image.NEAREST))
@@ -128,12 +128,12 @@ def extract_archive(filepath):
     if not os.path.exists(dst_dir):
         shutil.unpack_archive(filepath, extract_dir)
 
-def load_dataset(data_path, mode):
+def load_dataset(data_path, mode, transform=None):
     # IMP
     # if dataset not exist, download the dataset
     if not os.path.exists(os.path.join(data_path, "images")):
         print("Dataset not found, downloading...")
         OxfordPetDataset.download(data_path)
     
-    dataset = SimpleOxfordPetDataset(root=data_path, mode=mode)
+    dataset = SimpleOxfordPetDataset(root=data_path, mode=mode, transform=transform)
     return dataset
