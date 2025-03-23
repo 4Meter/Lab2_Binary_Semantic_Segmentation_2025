@@ -4,14 +4,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
-  def __init__(self, in_c, out_c):
+  def __init__(self, c_in, c_out):
     super().__init__()
     self.conv1 = nn.Sequential(
-        nn.Conv2d(in_c, out_c, kernel_size=3, padding=1), #same convolution
+        nn.Conv2d(c_in, c_out, kernel_size=3, padding=1), #same convolution
         nn.ReLU()
     )
     self.conv2 = nn.Sequential(
-        nn.Conv2d(out_c, out_c, kernel_size=3, padding=1), #same convolution1
+        nn.Conv2d(c_out, c_out, kernel_size=3, padding=1), #same convolution1
         nn.ReLU()
     )
   
@@ -21,9 +21,8 @@ class DoubleConv(nn.Module):
     return x
 
 class UNet(nn.Module):
-    def __init__(self, c_in=3, c_out=2, device="cuda"):
+    def __init__(self, c_in=3, c_out=2):
         super().__init__()
-        self.device = device
         
         self.conv1 = DoubleConv(c_in,64)       # (3,256,256) -> (64,256,256)
         self.down1 = nn.MaxPool2d(2)        # (64,256,256) -> (64,128,128)

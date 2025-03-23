@@ -1,21 +1,24 @@
 import argparse
 import os
-import torch
+from datetime import datetime
 import numpy as np
-from torch.utils.data import DataLoader
 from PIL import Image
-import matplotlib.pyplot as plt
-from torch.nn import functional as F
 from tqdm import tqdm
 import csv
-from datetime import datetime
+import matplotlib.pyplot as plt
+
+import torch
+from torch.nn import functional as F
+from torch.utils.data import DataLoader
 
 from oxford_pet import SimpleOxfordPetDataset
-from models.unet import UNet  # or replace with your model
+from models.unet import UNet
+from models.resnet34_unet import ResNet34_UNet
 from utils import dice_score
 
 def get_args():
     parser = argparse.ArgumentParser(description='Predict masks from input images')
+    parser.add_argument('--model_type', type=str, default='Unet',help='Unet or Resnet34_Unet')
     parser.add_argument('--model', default='MODEL.pth', help='path to the stored model weight')
     parser.add_argument('--data_path', type=str, required=True, help='path to the input data')
     parser.add_argument('--batch_size', '-b', type=int, default=4, help='batch size')
@@ -23,6 +26,7 @@ def get_args():
     return parser.parse_args()
 
 def inference(net, data, device, batch_size=4, visualize=False, model_path=None):
+    net.to(device)
     net.eval()
     loader = DataLoader(data, batch_size=batch_size, shuffle=False)
 
@@ -112,11 +116,24 @@ def visualize_batch(images, preds, trues, save_path=None, also_show=False):
 if __name__ == '__main__':
     args = get_args()
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device select
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available():
+        device = torch.device('mps')
+    else:
+        device = torch.device('cpu')
+    print(f'The used device is {device}')
 
     dataset = SimpleOxfordPetDataset(args.data_path, mode='test')
 
-    model = UNet()
+    if args.model_type == 'Unet':
+        model = UNet(c_in=3, c_out=2)
+    elif args.model_type == 'Resnet34_Unet':
+        model = ResNet34_UNet(c_in=3, c_out=2)
+    else:
+        print(f"model: {args.model_type} not available. Do you mean Unet or Resnet34_Unet?")
+
     model.load_state_dict(torch.load(args.model, map_location=device))
 
     avg_dice = inference(model, dataset, device, batch_size=args.batch_size, visualize=args.visualize, model_path=args.model)

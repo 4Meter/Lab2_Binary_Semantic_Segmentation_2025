@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 
 from oxford_pet import load_dataset
 from models.unet import UNet
+from models.resnet34_unet import ResNet34_UNet
 from evaluate import evaluate
 from utils import SegmentationTransform
 
@@ -20,8 +21,14 @@ def train(args):
     
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
-    # 模型、損失函數與優化器設定
-    model = UNet(c_in=3, c_out=2) # TODO: 換成 UNet 或其他模型
+    # model, loss function, optimizer, lr scheduler
+    if args.model_type == 'Unet':
+        model = UNet(c_in=3, c_out=2)
+    elif args.model_type == 'Resnet34_Unet':
+        model = ResNet34_UNet(c_in=3, c_out=2)
+    else:
+        print(f"model: {args.model_type} not available. Do you mean Unet or Resnet34_Unet?")
+        return
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=2)
@@ -38,7 +45,7 @@ def train(args):
     
     best_dice = 0.0
     best_epoch = 0
-    patience = 3
+    patience = 4
     patience_counter = 0
 
     os.makedirs("saved_models", exist_ok=True)
@@ -46,7 +53,8 @@ def train(args):
     # Initialize history
     history = {
         "train_loss": [],
-        "val_dice": []
+        "val_dice": [],
+        "lr": []
     }
 
     for epoch in range(args.epochs):
@@ -68,7 +76,9 @@ def train(args):
             pbar.set_postfix({"loss": loss.item()})
 
         avg_loss = epoch_loss / len(train_loader)
-        print(f"Epoch {epoch+1}/{args.epochs} - Training Loss: {avg_loss:.4f}")
+        current_lr = optimizer.param_groups[0]['lr']
+        history["lr"].append(avg_loss)
+        print(f"Epoch {epoch+1} - Training Loss: {avg_loss:.4f}, LR: {current_lr:.6f}")
 
         # Validation
         val_dice = evaluate(model, val_dataset, device, args.batch_size)
@@ -77,13 +87,14 @@ def train(args):
         # Epoch result saving
         history["train_loss"].append(avg_loss)
         history["val_dice"].append(val_dice)
-
+        history["Last Epoch"] = epoch+1
+        
         # Model saving + Early stopping
         if val_dice > best_dice:
             best_dice = val_dice
             best_epoch = epoch + 1
             patience_counter = 0
-            torch.save(model.state_dict(), "saved_models/best_model.pth")
+            torch.save(model.state_dict(), f"saved_models/{args.model_type}_best_model.pth")
             print("Model improved. Saved new best model.")
         else:
             patience_counter += 1
@@ -92,8 +103,13 @@ def train(args):
                 print("Early stopping triggered.")
                 break
     
+    history["Best Dice Score"] = best_dice
+    history["Best Epoch"] = best_epoch
+    history["Start Epoch"] = 1
+    history["batch_size"] = args.batch_size
+    history["Model"] = args.model_type
     # Saving history to JSON
-    with open("checkpoints/training_history.json", "w") as f:
+    with open(f"checkpoints/{args.model_type}_training_history.json", "w") as f:
         json.dump(history, f, indent=4)  
         
     print("Training complete!")
@@ -103,6 +119,7 @@ def train(args):
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
     parser.add_argument('--data_path', type=str, default='dataset/oxford-iiit-pet',help='path of the input data')
+    parser.add_argument('--model_type', type=str, default='Unet',help='Unet or Resnet34_Unet')
     parser.add_argument('--epochs', '-e', type=int, default=5, help='number of epochs')
     parser.add_argument('--batch_size', '-b', type=int, default=1, help='batch size')
     parser.add_argument('--learning-rate', '-lr', type=float, default=1e-5, help='learning rate')
