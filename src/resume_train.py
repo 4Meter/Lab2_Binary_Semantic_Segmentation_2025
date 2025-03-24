@@ -93,7 +93,7 @@ def resume_training(args):
 
         avg_loss = running_loss / len(train_loader)
         current_lr = optimizer.param_groups[0]['lr']
-        history["lr"].append(avg_loss)
+        history["lr"].append(current_lr)
         print(f"Epoch {epoch+1} - Training Loss: {avg_loss:.4f}, LR: {current_lr:.6f}")
 
         # Validation
@@ -110,7 +110,7 @@ def resume_training(args):
             best_dice = val_dice
             best_epoch = epoch + 1
             patience_counter = 0
-            torch.save(model.state_dict(), f"saved_models/{args.model_type}_best_model.pth")
+            torch.save(model.state_dict(), f"saved_models/{args.model_type}_bs{args.batch_size}_best_model.pth")
             print("Model improved. Saved new best model.")
         else:
             patience_counter += 1
@@ -125,7 +125,7 @@ def resume_training(args):
     history["batch_size"] = args.batch_size
     history["Model"] = args.model_type
     # Saving history to JSON
-    with open(f"checkpoints/{args.model_type}_training_history.json", "w") as f:
+    with open(f"checkpoints/{args.model_type}_bs{args.batch_size}_training_history.json", "w") as f:
         json.dump(history, f, indent=4) 
            
     print("Training complete!")

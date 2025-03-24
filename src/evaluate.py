@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from torch.nn import functional as F
 from tqdm import tqdm
 
+# IMP
 def evaluate(net, data, device, batch_size=4):
     net.eval()
     loader = DataLoader(data, batch_size=batch_size, shuffle=False)
