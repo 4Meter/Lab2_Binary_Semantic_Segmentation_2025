@@ -30,8 +30,7 @@ Thumbs.db
 *.zip
 
 # 資料集資料夾（例如 oxford pets 資料）
-images/
-annotations/
+oxford-iiit-pet/
 
 # Log / Output
 *.log
