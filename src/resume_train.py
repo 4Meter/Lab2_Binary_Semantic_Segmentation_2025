@@ -27,7 +27,8 @@ def resume_training(args):
     if args.model_type == 'Unet':
         model = UNet(c_in=3, c_out=2)
     elif args.model_type == 'Resnet34_Unet':
-        model = ResNet34_UNet(c_in=3, c_out=2)
+        use_cbam = not args.no_cbam
+        model = ResNet34_UNet(c_in=3, c_out=2, use_cbam= use_cbam)
     else:
         print(f"model: {args.model_typel} not available. Do you mean Unet or Resnet34_Unet?")
         return
@@ -143,6 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=10, help='Number of additional epochs to train')
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--no_cbam', action='store_true', help='Disable CBAM in decoder blocks')
     args = parser.parse_args()
 
     history, best_dice, best_epoch = resume_training(args)

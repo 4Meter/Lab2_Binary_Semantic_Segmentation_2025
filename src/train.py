@@ -25,7 +25,8 @@ def train(args):
     if args.model_type == 'Unet':
         model = UNet(c_in=3, c_out=2)
     elif args.model_type == 'Resnet34_Unet':
-        model = ResNet34_UNet(c_in=3, c_out=2)
+        use_cbam = not args.no_cbam
+        model = ResNet34_UNet(c_in=3, c_out=2, use_cbam= use_cbam)
     else:
         print(f"model: {args.model_type} not available. Do you mean Unet or Resnet34_Unet?")
         return
@@ -125,6 +126,7 @@ def get_args():
     parser.add_argument('--epochs', '-e', type=int, default=5, help='number of epochs')
     parser.add_argument('--batch_size', '-b', type=int, default=1, help='batch size')
     parser.add_argument('--learning-rate', '-lr', type=float, default=1e-5, help='learning rate')
+    parser.add_argument('--no_cbam', action='store_true', help='Disable CBAM in decoder blocks')
 
     return parser.parse_args()
  

@@ -64,7 +64,7 @@ class CBAM(nn.Module):
         return x
 
 class DecoderBlock(nn.Module):
-    def __init__(self, c_in, c_out):
+    def __init__(self, c_in, c_out, use_cbam=True):
         super().__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(c_in, c_out, kernel_size=3, padding=1, bias=False),
@@ -74,14 +74,19 @@ class DecoderBlock(nn.Module):
             nn.BatchNorm2d(c_out),
             nn.ReLU()
         )
-        self.cbam = CBAM(c_out)
+        self.use_cbam = use_cbam
+        if self.use_cbam:
+            self.cbam = CBAM(c_out)
 
     def forward(self, x):
         x = self.conv(x)
-        return self.cbam(x)
+        if self.use_cbam:
+            return self.cbam(x)
+        else:
+            return x
 
 class ResNet34_UNet(nn.Module):
-    def __init__(self, c_in=3, c_out=2):
+    def __init__(self, c_in=3, c_out=2, use_cbam=True):
         super().__init__()
         
         # Encoder Resnet34
@@ -124,22 +129,22 @@ class ResNet34_UNet(nn.Module):
             nn.Conv2d(512, 256, kernel_size = 1, stride = 1, bias=False),
             nn.BatchNorm2d(256)
         )
-        self.center = DecoderBlock(768,32)
+        self.center = DecoderBlock(768,32,use_cbam)
         
         self.up1 = nn.ConvTranspose2d(32, 32, kernel_size=2, stride=2)
-        self.dec1 = DecoderBlock(288,32)
+        self.dec1 = DecoderBlock(288,32,use_cbam)
         
         self.up2 = nn.ConvTranspose2d(32, 32, kernel_size=2, stride=2)
-        self.dec2 = DecoderBlock(160,32)
+        self.dec2 = DecoderBlock(160,32,use_cbam)
         
         self.up3 = nn.ConvTranspose2d(32, 32, kernel_size=2, stride=2)
-        self.dec3 = DecoderBlock(96,32)
+        self.dec3 = DecoderBlock(96,32,use_cbam)
         
         self.up4 = nn.ConvTranspose2d(32, 32, kernel_size=2, stride=2)
-        self.dec4 = DecoderBlock(32,32)
+        self.dec4 = DecoderBlock(32,32,use_cbam)
         
         self.up5 = nn.ConvTranspose2d(32, 32, kernel_size=2, stride=2)
-        self.dec5 = DecoderBlock(32,32)
+        self.dec5 = DecoderBlock(32,32,use_cbam)
         
         self.final_conv = nn.Conv2d(32, c_out, kernel_size=1)
         
